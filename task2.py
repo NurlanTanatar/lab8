@@ -1,154 +1,110 @@
 import pygame
-class Body(object):
-    def __init__(self, FPS=60 , width=640, height=480):
-        pygame.init()
-        self.width=width
-        self.height=height
-        self.FPS=FPS
-        print(FPS)#####################################
-        self.screen = pygame.display.set_mode((self.width, self.height))
-        self.background = pygame.Surface(self.screen.get_size())
+import random
+
+pygame.init()
+
+class Game():
+
+    def __init__(self, width, height, ball_surface_size, ball_radius, ball_x, ball_y, ball_dx, ball_dy, FPS):
+        self.screen = pygame.display.set_mode((width, height))
+        self.screenrect = self.screen.get_rect()
+        self.background = pygame.Surface((width, height))
         self.background.fill((255, 255, 255))
-        self.background.convert()
-
-
-        self.ballsurface = pygame.Surface((50,50))
+        self.background = self.background.convert()
+        self.background2 = self.background.copy()
+        self.ballsurface = pygame.Surface(ball_surface_size)
         self.ballsurface.set_colorkey((0, 0, 0))
-
-        pygame.draw.circle(self.ballsurface, (255,0,0), (25,25), 25)
-        self.ballsurface.convert_alpha()
-
-
-        self.FPS=60
-        self.gametime=0.0
+        pygame.draw.circle(self.ballsurface, (0,0,255), (25,25), ball_radius)
+        self.ballsurface = self.ballsurface.convert_alpha()
+        self.ballrect = self.ballsurface.get_rect()
+        self.ballx, self.bally = ball_x, ball_y
+        self.dx, self.dy = ball_dx, ball_dy
         self.clock = pygame.time.Clock()
-        self.dx, self.dy = 228, 0
-        self.x , self.y = 0, 0
+        self.mainloop = True
+        self.FPS = FPS
+        self.playtime = 0
+        self.paint_big_circles = False
         self.cleanup = True
+        
 
-    def run(self, ball):
-        running = True
-        while (running == True):
-            milliseconds = self.clock.tick(self.FPS)
-            seconds = milliseconds / 1000.0
-            self.gametime = self.gametime + seconds
+    def wildPainting(self):
+        pygame.draw.circle(self.background, (random.randint(0,255),
+                       random.randint(0,255), random.randint(0,255)),
+                       (random.randint(0,self.screenrect.width),
+                       random.randint(0,self.screenrect.height)),
+                       random.randint(50,500))
+
+    def run(self):    
+        while self.mainloop:
+            self.milliseconds = self.clock.tick(self.FPS) 
+            self.seconds = self.milliseconds / 1000.0 
+            self.playtime += self.seconds
             for event in pygame.event.get():
-                if (event.type == pygame.QUIT):
-                    running = False
-                elif (event.type == pygame.KEYDOWN):
-                    if (event.key == pygame.K_ESCAPE):
-                        running = False
-                    elif (event.key == pygame.K_0):
-                        self.FPS = 1
-                    elif (event.key == pygame.K_1):
-                        self.FPS = 10
-                    elif (event.key == pygame.K_2):
+                if event.type == pygame.QUIT:
+                    self.mainloop = False
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        self.mainloop = False
+
+                    elif event.key == pygame.K_1: 
+                        self.FPS = 5
+                    elif event.key == pygame.K_2:
                         self.FPS = 20
-                    elif (event.key == pygame.K_3):
+                    elif event.key == pygame.K_3:
                         self.FPS = 30
-                    elif (event.key == pygame.K_4):
+                    elif event.key == pygame.K_4:
                         self.FPS = 40
-                    elif (event.key == pygame.K_5):
+                    elif event.key == pygame.K_5:
                         self.FPS = 50
-                    elif (event.key == pygame.K_6):
+                    elif event.key == pygame.K_6:
                         self.FPS = 60
-                    elif (event.key == pygame.K_7):
+                    elif event.key == pygame.K_7:
                         self.FPS = 70
-                    elif (event.key == pygame.K_8):
+                    elif event.key == pygame.K_8:
                         self.FPS = 80
-                    elif (event.key == pygame.K_9):
+                    elif event.key == pygame.K_9:
                         self.FPS = 90
-                    elif (event.key == pygame.K_DOWN):
-                        self.dx = 0
-                        self.dy = 228
-                    elif (event.key == pygame.K_UP):
-                        self.dx = 0
-                        self.dy = -228
-                    elif (event.key == pygame.K_RIGHT):
-                        self.dx = 228
-                        self.dy = 0
-                    elif (event.key == pygame.K_LEFT):
-                        self.dx = -228
-                        self.dy = 0
-                    elif (event.key == pygame.K_y):
+                    elif event.key == pygame.K_0:
+                        self.FPS = 1000
+                    elif event.key == pygame.K_x:
+                        self.paint_big_circles = not self.paint_big_circles
+                    elif event.key == pygame.K_y:
                         self.cleanup = not self.cleanup
-            
-            pygame.display.set_caption("0-9: limit FPS to {}"
-                            " (now): {:.2f}".format(self.FPS, self.clock.get_fps()))
+                    elif event.key == pygame.K_w:
+                        self.background.blit(self.background2, (0,0))
+
+            pygame.display.set_caption("x: paint ({}) y: cleanup ({}) ,"
+                                       " w: white, 0-9: limit FPS to {}"
+                                       " (now: {:.2f})".format(self.paint_big_circles, 
+                                                               self.cleanup, 
+                                                               self.FPS, 
+                                                               self.clock.get_fps()
+                                                               )
+                                        )
             if self.cleanup:
-                self.screen.blit(self.background, (0, 0))
+                self.screen.blit(self.background, (0,0))
+            if self.paint_big_circles:
+                self.wildPainting()
 
+            self.ballx += self.dx * self.seconds
+            self.bally += self.dy * self.seconds 
 
-            if (ball.checking_x( ball.x, ball.dx) == True):
-                ball.dx = ball.dx * (-1)
-                self.dx = ball.dx
-            elif (ball.checking_y(ball.y, ball.dy) == True):
-                ball.dy = ball.dy * (-1)
-                self.dy = self.dy
-
-
-            self.x = self.x + self.dx * seconds
-            self.y = self.y + self.dy * seconds
-
-            self.screen.blit(self.ballsurface, ( round (self.x, 0), round (self.y,0)))
+            if self.ballx < 0:
+                self.ballx = 0
+                self.dx *= -1 
+            elif self.ballx + self.ballrect.width > self.screenrect.width:
+                self.ballx = self.screenrect.width - self.ballrect.width
+                self.dx *= -1
+            if self.bally < 0:
+                self.bally = 0
+                self.dy *= -1
+            elif self.bally + self.ballrect.height > self.screenrect.height:
+                self.bally = self.screenrect.height - self.ballrect.height
+                self.dy *= -1
+ 
+            self.screen.blit(self.ballsurface, (round(self.ballx,0), round(self.bally,0 )))
             pygame.display.flip()
-            
-        pygame.quit()
 
 
-
-
-
-
-class Ball:
-    def __init__(self, x, y, radius, dx, dy, color):
-        self.x=x
-        self.y=y
-        self.color=color
-        self.dx=dx
-        self.dy=dy
-        self.radius=radius
-    def checking_x(self, x, dx):
-        if ( (x + 50 > 640 and dx == 228) or (x < 0 and dx == -228) ):
-            return (True)
-        else:
-            return (False)
-    def checking_y(self, y, dy):
-        if ( (y + 50 > 480 and dy == 228) or (y < 0 and dy == -228)):
-            return (True)
-        else:
-            return (False)
-
-
-# def motion(ball, FPS, circuit):
-
-    # def movement():
-    #     if (ball.checking_x( ball.x, ball.dx) == True):
-    #         ball.dx = ball.dx * (-1)
-            
-    #     elif (ball.checking_y(ball.y, ball.dy) == True):
-    #         ball.dy = ball.dy * (-1)
-
-        # ball.x = ball.x + ball.dx * seconds
-
-        # ball.draw(circuit)
-
-    # return movement()    
-
-def main(FPS):
-    circuit = Body(FPS)
-
-    # x, y, radius, dx, dy, color
-    
-    ball = Ball(0, 0, 25, 228, 0, (255, 0, 0))
-
-    # loopfunc = motion(ball, FPS, circuit)
-
-    circuit.run(ball)
-
-
-
-
-if __name__ == '__main__':
-
-    main(70)
+game = Game(640,480, (50, 50), 25, 550, 240, 60, 50, 60)
+game.run()
